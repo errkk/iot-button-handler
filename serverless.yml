@@ -1,0 +1,38 @@
+org: errkk
+app: button-lambda
+name: aws-lambda-starter
+component: aws-lambda
+
+provider:
+  name: aws
+  runtime: python3.8
+  timeout: 10
+
+  stage: prod
+  region: eu-west-2
+
+  environment:
+    # For oauth, eventually
+    client_key: ${param:client_key}
+    client_secret: ${param:client_secret}
+    # For requests. temporarily
+    access_token: ${param:access_token}
+    hue_application_key: ${param:hue_application_key}
+
+package:
+  include:
+    - v-env/lib/python3.8/site-packages/**
+  exclude:
+    - .env
+
+plugins:
+   - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+     dockerizePip: false
+     pythonBin: python3
+
+inputs:
+  src: ./src
+  handler: handler.main
