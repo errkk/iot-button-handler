@@ -1,4 +1,4 @@
-.PHONY: venv_create run watch install test test_watch cli
+.PHONY: venv_create run watch install test test_watch cli deploy
 
 BIN=venv/bin/
 
@@ -26,3 +26,6 @@ test_watch:
 	rm -f src/.testmondata &&\
 	$(BIN)pytest-watch -- --testmon -vv --disable-pytest-warnings -rP
 
+
+deploy:
+	serverless deploy

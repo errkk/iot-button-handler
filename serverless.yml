@@ -1,6 +1,6 @@
 org: errkk
 app: button-lambda
-name: aws-lambda-starter
+service: button-handler
 component: aws-lambda
 
 provider:
@@ -13,7 +13,7 @@ provider:
 
   environment:
     # For oauth, eventually
-    client_key: ${param:client_key}
+    client_id: ${param:client_id}
     client_secret: ${param:client_secret}
     # For requests. temporarily
     access_token: ${param:access_token}
@@ -26,13 +26,12 @@ package:
     - .env
 
 plugins:
-   - serverless-python-requirements
-
+  - serverless-python-requirements
 custom:
   pythonRequirements:
      dockerizePip: false
      pythonBin: python3
 
-inputs:
-  src: ./src
-  handler: handler.main
+functions:
+  main:
+    handler: handler.main

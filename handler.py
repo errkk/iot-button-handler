@@ -1,3 +1,4 @@
+from typing import Dict
 from os import environ, path
 from requests import Session, Response
 
@@ -20,17 +21,17 @@ hue_client.headers.update({
 def url(pathname: str) -> str:
     return path.join(BASE_URL, pathname)
 
-def on(light_id: str, on: bool) -> Response:
-    payload = {"on": {"on": on}}
+def on(light_id: str, state: bool) -> Response:
+    payload = {"on": {"on": state}}
     return hue_client.put(url(f"resource/light/{light_id}"), json=payload)
 
 
-def all_off():
+def all_on(state: bool):
     for light_id in [DESK, BOWL, LAMP]:
-        on(light_id, False)
+        on(light_id, state)
 
-def main():
-    all_off()
+def main(__event: Dict, __context: Dict):
+    all_on(False)
 
 if __name__ == "__main__":
-    main()
+    all_on(True)
