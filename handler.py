@@ -25,6 +25,9 @@ LAMP = "f6f1012b-04b1-4970-9d67-81e60ca7cd92"
 class Tags(TypedDict):
     hueTokens: str
 
+def url(pathname: str) -> str:
+    return path.join(BASE_URL, pathname)
+
 
 class TagAuth:
     client = None
@@ -34,77 +37,75 @@ class TagAuth:
             self.client = boto3.client("lambda", region_name="eu-west-2")
         return self.client
 
-    def get_tags(self) -> Tags:
+    def retrieve(self) -> None:
         tags = self.get_client().list_tags(Resource=ARN)
-        return tags["Tags"]
+        self.parse_tags(tags["Tags"])
 
-    def set_tags(self, value: str) -> None:
+    def save(self, access_token: str, refresh_token: str) -> None:
+        data = bytes(f"{access_token}:f{refresh_token}", encoding="utf-8")
+        value = b64encode(data).decode("utf-8")
         self.get_client().tag_resource(
             Resource=ARN,
             Tags={"hueTokens": value},
         )
 
-    def parse_tags(self, tags: Tags) -> Tuple[str, str]:
+    def parse_tags(self, tags: Tags) -> None:
+        if "hueTokens" not in tags:
+            print("No tokens found in tags")
         data = tags["hueTokens"]
         value = b64decode(data).decode("utf-8")
         values = value.split(":")
         access_token, refresh_token = values
-        return access_token, refresh_token
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        print(self.access_token, self.refresh_token)
 
-    def retrieve(self) -> Tuple[str, str]:
-        tags = self.get_tags()
-        return self.parse_tags(tags)
+    def get_from_auth_code(self,code: str) -> None:
+        print(f"https://api.meethue.com/v2/oauth2/authorize?client_id={CLIENT_ID}&response_type=code")
+        data = {"grant_type": "authorization_code", "code": code}
+        return self.request_token(data)
 
-    def save(self, access_token: str, refresh_token: str) -> None:
-        data = bytes(f"{access_token}:f{refresh_token}", encoding="utf-8")
-        value = b64encode(data).decode("utf-8")
-        self.set_tags(value)
+    def refresh(self):
+        data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
+        return self.request_token(data)
+
+    def request_token(self, data: Dict) -> None:
+        client = Session()
+        client.auth = HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET)
+        res = client.post(url("v2/oauth2/token"), data=data)
+        data = res.json()
+        print("Updating access token", data)
+        try:
+            self.access_token = data["access_token"]
+            self.refresh_token = data["refresh_token"]
+        except KeyError:
+            print(data)
+            raise Exception("No access token returned")
+        else:
+            self.save(self.access_token, self.refresh_token)
 
 
 class Hue:
     client: Session
-    refresh_token: str
 
     def __init__(self):
         self.client = Session()
         self.auth = TagAuth()
-        self.get_tokens()
+        self.auth.retrieve()
 
-    def get_tokens(self):
-        access_token, refresh_token = self.auth.retrieve()
-        self.access_token = access_token
-        self.refresh_token = refresh_token
+    def get_headers(self):
+        return {
+            "Authorization": f"Bearer {self.auth.access_token}",
+            "hue-application-key": HUE_APPLICATION_KEY,
+            "Allow": "*",
+        }
 
-        self.client.headers.update(
-            {
-                "Authorization": f"Bearer {self.access_token}",
-                "hue-application-key": HUE_APPLICATION_KEY,
-                "Allow": "*",
-            }
-        )
-
-    def url(self, pathname: str) -> str:
-        return path.join(BASE_URL, pathname)
-
-    def on(self, light_id: str, state: bool) -> Response:
+    def on(self, light_id: str, state: bool) -> None:
         payload = {"on": {"on": state}}
-        res = self.client.put(
-            self.url(f"route/clip/v2/resource/light/{light_id}"), json=payload
+        headers = self.get_headers()
+        self.client.put(
+            url(f"route/clip/v2/resource/light/{light_id}"), json=payload, headers=headers
         )
-        if res.status_code == codes.UNAUTHORIZED:
-            self.refresh()
-        return res
-
-    def refresh(self):
-        client = Session()
-        client.auth = HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET)
-        data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
-        res = client.post(self.url("v2/oauth2/token"), data=data)
-        data = res.json()
-        print("Updating access token")
-        self.access_token = data["access_token"]
-        self.refresh_token = data["refresh_token"]
-        self.auth.save(self.access_token, self.refresh_token)
 
 
 def all_on(state: bool):
@@ -118,4 +119,7 @@ def main(__event: Dict, __context: Dict):
 
 
 if __name__ == "__main__":
+    # auth = TagAuth()
+    # auth.get_from_auth_code("gWUvQjox")
+    # auth.retrieve()
     all_on(True)
