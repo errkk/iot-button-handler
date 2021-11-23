@@ -41,8 +41,8 @@ class TagAuth:
         tags = self.get_client().list_tags(Resource=ARN)
         self.parse_tags(tags["Tags"])
 
-    def save(self, access_token: str, refresh_token: str) -> None:
-        data = bytes(f"{access_token}:f{refresh_token}", encoding="utf-8")
+    def save(self) -> None:
+        data = bytes(f"{self.access_token}:f{self.refresh_token}", encoding="utf-8")
         value = b64encode(data).decode("utf-8")
         self.get_client().tag_resource(
             Resource=ARN,
@@ -60,16 +60,15 @@ class TagAuth:
         self.refresh_token = refresh_token
         print(self.access_token, self.refresh_token)
 
-    def get_from_auth_code(self,code: str) -> None:
-        print(f"https://api.meethue.com/v2/oauth2/authorize?client_id={CLIENT_ID}&response_type=code")
+    def get_from_auth_code(self,code: str) -> Response:
         data = {"grant_type": "authorization_code", "code": code}
         return self.request_token(data)
 
-    def refresh(self):
+    def refresh(self) -> Response:
         data = {"grant_type": "refresh_token", "refresh_token": self.refresh_token}
         return self.request_token(data)
 
-    def request_token(self, data: Dict) -> None:
+    def request_token(self, data: Dict) -> Response:
         client = Session()
         client.auth = HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET)
         res = client.post(url("v2/oauth2/token"), data=data)
@@ -82,7 +81,12 @@ class TagAuth:
             print(data)
             raise Exception("No access token returned")
         else:
-            self.save(self.access_token, self.refresh_token)
+            self.save()
+
+        return res
+
+    def link(self) -> None:
+        print(f"https://api.meethue.com/v2/oauth2/authorize?client_id={CLIENT_ID}&response_type=code")
 
 
 class Hue:
@@ -94,6 +98,7 @@ class Hue:
         self.auth.retrieve()
 
     def get_headers(self):
+        # Always get latest header from auth instance, incase it updated
         return {
             "Authorization": f"Bearer {self.auth.access_token}",
             "hue-application-key": HUE_APPLICATION_KEY,
@@ -103,9 +108,15 @@ class Hue:
     def on(self, light_id: str, state: bool) -> None:
         payload = {"on": {"on": state}}
         headers = self.get_headers()
-        self.client.put(
+        res = self.client.put(
             url(f"route/clip/v2/resource/light/{light_id}"), json=payload, headers=headers
         )
+
+        if res.status_code == codes.UNAUTHORIZED:
+            print("Attempting token refresh")
+            self.auth.refresh()
+            print("Retry")
+            self.on(light_id, state)
 
 
 def all_on(state: bool):
@@ -120,6 +131,6 @@ def main(__event: Dict, __context: Dict):
 
 if __name__ == "__main__":
     # auth = TagAuth()
-    # auth.get_from_auth_code("gWUvQjox")
-    # auth.retrieve()
+    # auth.link()
+    # auth.get_from_auth_code("jIDTYFjo")
     all_on(True)
