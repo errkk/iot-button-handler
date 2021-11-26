@@ -1,9 +1,9 @@
-from typing import Dict, TypedDict, Tuple
-from os import environ, path
 from base64 import b64decode, b64encode
+from os import environ, path
+from typing import Dict, TypedDict
 
 import boto3
-from requests import Session, Response, codes
+from requests import Response, Session, codes
 from requests.auth import HTTPBasicAuth
 
 ARN = environ.get("arn")
@@ -24,6 +24,7 @@ LAMP = "f6f1012b-04b1-4970-9d67-81e60ca7cd92"
 
 class Tags(TypedDict):
     hueTokens: str
+
 
 def url(pathname: str) -> str:
     return path.join(BASE_URL, pathname)
@@ -60,7 +61,7 @@ class TagAuth:
         self.refresh_token = refresh_token
         print(self.access_token, self.refresh_token)
 
-    def get_from_auth_code(self,code: str) -> Response:
+    def get_from_auth_code(self, code: str) -> Response:
         data = {"grant_type": "authorization_code", "code": code}
         return self.request_token(data)
 
@@ -86,7 +87,9 @@ class TagAuth:
         return res
 
     def link(self) -> None:
-        print(f"https://api.meethue.com/v2/oauth2/authorize?client_id={CLIENT_ID}&response_type=code")
+        print(
+            f"https://api.meethue.com/v2/oauth2/authorize?client_id={CLIENT_ID}&response_type=code"
+        )
 
 
 class Hue:
@@ -98,7 +101,7 @@ class Hue:
         self.auth.retrieve()
 
     def get_headers(self):
-        # Always get latest header from auth instance, incase it updated
+        # Always get latest header from auth instance, in case it updated
         return {
             "Authorization": f"Bearer {self.auth.access_token}",
             "hue-application-key": HUE_APPLICATION_KEY,
@@ -109,7 +112,9 @@ class Hue:
         payload = {"on": {"on": state}}
         headers = self.get_headers()
         res = self.client.put(
-            url(f"route/clip/v2/resource/light/{light_id}"), json=payload, headers=headers
+            url(f"route/clip/v2/resource/light/{light_id}"),
+            json=payload,
+            headers=headers,
         )
 
         if res.status_code == codes.UNAUTHORIZED:
