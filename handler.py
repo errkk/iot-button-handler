@@ -1,3 +1,4 @@
+from time import time
 import json
 from base64 import b64decode, b64encode
 from os import environ, path
@@ -162,9 +163,12 @@ class Hue:
         )
 
 
+def main(_event, _context) -> None:
+    h = Hue()
+    for light_id in [DESK, BOWL, LAMP]:
+        h.on(light_id, False)
+
+
 if __name__ == "__main__":
     h = Hue()
     print(h.get_auth_url())
-
-    # h.fetch_token("5g6WeAfw")
-    h.on(DESK, True)
