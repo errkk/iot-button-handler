@@ -40,12 +40,9 @@ class Token(TypedDict):
     token_type: str
 
 
-def url(pathname: str) -> str:
-    return path.join(BASE_URL, pathname)
-
-
 class TagAuth:
     client = None
+    token: Token
 
     def __init__(self, tag_key: str) -> None:
         self.tag_key = tag_key
@@ -55,16 +52,16 @@ class TagAuth:
             self.client = boto3.client("lambda", region_name="eu-west-2")
         return self.client
 
-    def retrieve(self) -> None:
+    def retrieve(self) -> Token:
         tags = self.get_client().list_tags(Resource=ARN)
-        if self.tag_key not in tags:
+        if self.tag_key not in tags["Tags"]:
             print("No tokens found in tags")
-        data = tags[self.tag_key]
+        data = tags["Tags"][self.tag_key]
         value = b64decode(data).decode("utf-8")
         self.token = json.loads(value)
         return self.token
 
-    def save(self, token) -> None:
+    def save(self, token: Token) -> None:
         self.token = token
         json_data = json.dumps(self.token)
         data = bytes(json_data, encoding="utf-8")
@@ -109,12 +106,13 @@ class TagAuth:
 
 
 class Hue:
-    client: OAuth2Session
+    # client: OAuth2Session
     tag_auth: TagAuth
 
     def __init__(self) -> None:
         # self.tag_auth = TagAuth()
         self.tag_auth = TagAuth("testTokeKey")
+        self.client = None
 
     @classmethod
     def get_auth_url(cls):
@@ -122,24 +120,16 @@ class Hue:
         url, state = client.authorization_url(AUTH_URL)
         return url, state
 
-    def fetch_token(self, state: str, code: str) -> None:
+    def fetch_token(self, code: str) -> None:
         client = OAuth2Session(
-            client_id=CLIENT_ID, redirect_uri=REDIRECT_URI, state=state
+            CLIENT_ID,
         )
-        headers = {
-            "hue-application-key": HUE_APPLICATION_KEY,
-            "Allow": "*",
-        }
-        token = client.fetch_token(
-            TOKEN_URL,
-            code=code,
-            auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET),
-            headers=headers,
-            include_client_id=True,
-        )
+        client.auth = HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET)
+
+        token = client.fetch_token(TOKEN_URL, client_secret=CLIENT_SECRET, code=code)
         self.tag_auth.save(token)
 
-    def token_updater(self, token) -> None:
+    def token_updater(self, token: Token) -> None:
         self.tag_auth.save(token)
 
     def get_hue_client(self) -> OAuth2Session:
@@ -150,20 +140,31 @@ class Hue:
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
         }
-        client = OAuth2Session(
+        self.client = OAuth2Session(
             client_id=CLIENT_ID,
             token=self.tag_auth.token,
             auto_refresh_kwargs=extra,
             auto_refresh_url=TOKEN_URL,
-            # TODO make this an instance method so it can update the token that this uses
             token_updater=self.token_updater,
         )
-        return client
+        self.client.headers.update(
+            {
+                "hue-application-key": HUE_APPLICATION_KEY,
+            }
+        )
+        return self.client
+
+    def on(self, light_id: str, state: bool) -> None:
+        payload = {"on": {"on": state}}
+        self.get_hue_client().put(
+            path.join(BASE_URL, f"route/clip/v2/resource/light/{light_id}"),
+            json=payload,
+        )
 
 
 if __name__ == "__main__":
     h = Hue()
-    # print(h.get_auth_url())
-    code = "4pJbxBnT"
-    state = "KpZzbeJitsmBRAP549vTFFQfJ45Cka"
-    h.fetch_token(state, code)
+    print(h.get_auth_url())
+
+    # h.fetch_token("5g6WeAfw")
+    h.on(DESK, True)
