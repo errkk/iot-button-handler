@@ -11,16 +11,15 @@ HUE_APPLICATION_KEY = environ["hue_application_key"]
 
 # For OAuth
 REDIRECT_URI = "https://webhook.site/b1a702b9-4d5d-46f2-a70c-446683799f8c"
-CLIENT_ID = environ["hue_client_id"]
-CLIENT_SECRET = environ["hue_client_secret"]
-HUE_TOKEN_KEY = environ["hue_token_key"]
+CLIENT_ID = environ["sonos_client_id"]
+CLIENT_SECRET = environ["sonos_client_secret"]
 
-BASE_URL = "https://api.meethue.com"
-TOKEN_URL = path.join(BASE_URL, "v2/oauth2/token")
-AUTH_URL = path.join(BASE_URL, "v2/oauth2/authorize")
+BASE_URL = "https://api.ws.sonos.com/control/api/v1"
+TOKEN_URL = "https://api.sonos.com/login/v3/oauth/access"
+AUTH_URL = "https://api.sonos.com/login/v3/oauth"
 
 
-class Hue(TagAuth):
+class Sonos(TagAuth):
     tag_key = HUE_TOKEN_KEY
 
     def __init__(self) -> None:
@@ -41,7 +40,7 @@ class Hue(TagAuth):
         token = client.fetch_token(TOKEN_URL, client_secret=CLIENT_SECRET, code=code)
         self.save(token)
 
-    def get_hue_client(self) -> OAuth2Session:
+    def get_sonos_client(self) -> OAuth2Session:
         if self._client:
             return self._client
         self.retrieve()
@@ -65,7 +64,7 @@ class Hue(TagAuth):
 
     def on(self, light_id: str, state: bool) -> None:
         payload = {"on": {"on": state}}
-        self.get_hue_client().put(
+        self.get_sonos_client().put(
             path.join(BASE_URL, "route/clip/v2/resource/light", light_id),
             json=payload,
         )
