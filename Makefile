@@ -15,7 +15,7 @@ watch:
 	nodemon -e py --exec "$(BIN)python -m handler"
 
 get_token:
-	$(BIN)python -m src.get_token
+	$(BIN)python -m lib.get_token
 
 install:
 	cat requirements.txt requirements.dev.txt | $(BIN)pip install -r /dev/stdin
