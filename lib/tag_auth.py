@@ -6,7 +6,7 @@ from typing import TypedDict
 import boto3
 
 
-ARN = environ.get("arn")
+ARN = environ["arn"]
 
 
 class Tags(TypedDict):

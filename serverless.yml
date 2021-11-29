@@ -21,6 +21,7 @@ provider:
 
   environment:
     arn: ${param:arn}
+    hue_application_key: ${param:hue_application_key}
     # For OAuth
     client_id: ${param:client_id}
     client_secret: ${param:client_secret}
@@ -43,4 +44,4 @@ functions:
   main:
     handler: handler.main
     environment:
-      hueTokenKey: "hueToken"
+      hueTokenKey: hueToken
