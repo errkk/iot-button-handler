@@ -4,7 +4,7 @@ from os import environ, path
 from requests.auth import HTTPBasicAuth
 from requests_oauthlib import OAuth2Session
 
-from .tag_auth import TagAuth
+from .tag_auth import TagAuth, Token
 
 # From the hub
 HUE_APPLICATION_KEY = environ["hue_application_key"]
@@ -13,7 +13,7 @@ HUE_APPLICATION_KEY = environ["hue_application_key"]
 REDIRECT_URI = "https://webhook.site/b1a702b9-4d5d-46f2-a70c-446683799f8c"
 CLIENT_ID = environ["hue_client_id"]
 CLIENT_SECRET = environ["hue_client_secret"]
-HUE_TOKEN_KEY = environ["hue_token_key"]
+TOKEN_KEY = environ["hue_token_key"]
 
 BASE_URL = "https://api.meethue.com"
 TOKEN_URL = path.join(BASE_URL, "v2/oauth2/token")
@@ -21,7 +21,7 @@ AUTH_URL = path.join(BASE_URL, "v2/oauth2/authorize")
 
 
 class Hue(TagAuth):
-    tag_key = HUE_TOKEN_KEY
+    tag_key = TOKEN_KEY
 
     def __init__(self) -> None:
         self._client = None
@@ -38,7 +38,9 @@ class Hue(TagAuth):
         )
         client.auth = HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET)
 
-        token = client.fetch_token(TOKEN_URL, client_secret=CLIENT_SECRET, code=code)
+        token: Token = client.fetch_token(
+            TOKEN_URL, client_secret=CLIENT_SECRET, code=code
+        )
         self.save(token)
 
     def get_hue_client(self) -> OAuth2Session:

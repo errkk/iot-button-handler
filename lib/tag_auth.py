@@ -1,7 +1,9 @@
+from __future__ import annotations
 import json
 from os import environ
 from base64 import b64decode, b64encode
-from typing import TypedDict
+from typing import TypedDict, List
+from typing_extensions import NotRequired
 
 import boto3
 
@@ -18,6 +20,7 @@ class Token(TypedDict):
     access_token: str
     refresh_token: str
     token_type: str
+    scope: NotRequired[List]
 
 
 class TagAuth:

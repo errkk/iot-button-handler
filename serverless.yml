@@ -5,7 +5,7 @@ component: aws-lambda
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.9
   timeout: 10
 
   stage: prod
@@ -26,6 +26,7 @@ provider:
     hue_client_secret: ${param:hue_client_secret}
     sonos_client_id: ${param:sonos_client_id}
     sonos_client_secret: ${param:sonos_client_secret}
+    sonos_household: ${param:sonos_household}
 
 package:
   include:
@@ -46,3 +47,4 @@ functions:
     handler: handler.main
     environment:
       hue_token_key: hueToken
+      sonos_token_key: sonosToken

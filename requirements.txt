@@ -1,3 +1,4 @@
 boto3
 requests
 requests_oauthlib
+typing_extensions
