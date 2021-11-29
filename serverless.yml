@@ -28,6 +28,7 @@ provider:
 package:
   include:
     - v-env/lib/python3.8/site-packages/**
+    - src/*
   exclude:
     - .env
 
@@ -41,3 +42,5 @@ custom:
 functions:
   main:
     handler: handler.main
+    environment:
+      hueTokenKey: "hueToken"
