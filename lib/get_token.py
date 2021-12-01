@@ -21,5 +21,5 @@ def auth_sonos():
 
 
 if __name__ == "__main__":
-    # auth_hue()
+    auth_hue()
     auth_sonos()
