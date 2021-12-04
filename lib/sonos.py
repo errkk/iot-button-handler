@@ -67,9 +67,9 @@ class Sonos(TagAuth):
 
     def refresh_token(self) -> None:
         """
-        Have to manually catch TokenExpiredError and refetch retry cos stoopid
-        lib doesn't let us send the basic auth header in the refresh_token
-        retquest, when it's done automatically
+        Have to manually catch TokenExpiredError and refetch retry
+        cos stoopid lib doesn't let us send the basic auth header in
+        the refresh_token retquest, when it's done automatically
         """
         token = self.get_sonos_client().refresh_token(
             TOKEN_URL,
@@ -106,6 +106,14 @@ class Sonos(TagAuth):
             json={},
         )
 
+    def set_vol(self, group_id: str, vol: int) -> Response:
+        volume = min(abs(vol), 100)
+        return self.request(
+            "post",
+            path.join(BASE_URL, "groups", group_id, "groupVolume"),
+            json={"volume": volume},
+        )
+
     def get_group_ids(self) -> List[str]:
         res = self.get_groups()
         data = res.json()
@@ -114,3 +122,11 @@ class Sonos(TagAuth):
     def all_off(self):
         for group_id in self.get_group_ids():
             self.stop(group_id)
+
+    def turn_down(self):
+        for group_id in self.get_group_ids():
+            self.set_vol(group_id, 5)
+
+    def all_set_vol(self, vol: int):
+        for group_id in self.get_group_ids():
+            self.set_vol(group_id, vol)

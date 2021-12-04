@@ -27,6 +27,8 @@ provider:
     sonos_client_id: ${param:sonos_client_id}
     sonos_client_secret: ${param:sonos_client_secret}
     sonos_household: ${param:sonos_household}
+    hue_token_key: hueToken
+    sonos_token_key: sonosToken
 
 package:
   include:
@@ -45,6 +47,10 @@ custom:
 functions:
   main:
     handler: handler.main
-    environment:
-      hue_token_key: hueToken
-      sonos_token_key: sonosToken
+
+  set_vol:
+    handler: handler.set_vol
+    events:
+      - http:
+          path: set_vol/{vol}
+          method: put
