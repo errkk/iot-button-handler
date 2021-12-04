@@ -17,6 +17,7 @@ class Tags(TypedDict):
 
 class Token(TypedDict):
     expires_in: int
+    expires_at: float
     access_token: str
     refresh_token: str
     token_type: str
@@ -26,6 +27,7 @@ class Token(TypedDict):
 class TagAuth:
     boto_client = None
     token: Token
+    tag_key: str
 
     def get_boto_client(self):
         if not self.boto_client:

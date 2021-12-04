@@ -1,9 +1,12 @@
+from time import time
 import webbrowser
 from os import environ, path
 from typing import List
 
+from requests.auth import HTTPBasicAuth
 from requests import Response
 from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 
 from .tag_auth import TagAuth, Token
 
@@ -28,6 +31,7 @@ class Sonos(TagAuth):
 
     def __init__(self) -> None:
         self._client = None
+        self.manual_refresh = False
 
     @classmethod
     def get_auth_url(cls):
@@ -53,18 +57,34 @@ class Sonos(TagAuth):
         if self._client:
             return self._client
         self.retrieve()
-        extra = {
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-        }
+        if self.manual_refresh:
+            self.token["expires_at"] = time() - 100
         self._client = OAuth2Session(
             client_id=CLIENT_ID,
             token=self.token,
-            auto_refresh_kwargs=extra,
-            auto_refresh_url=TOKEN_URL,
-            token_updater=self.token_updater,
         )
         return self._client
+
+    def refresh_token(self) -> None:
+        """
+        Have to manually catch TokenExpiredError and refetch retry cos stoopid
+        lib doesn't let us send the basic auth header in the refresh_token
+        retquest, when it's done automatically
+        """
+        token = self.get_sonos_client().refresh_token(
+            TOKEN_URL,
+            client_id=CLIENT_ID,
+            client_secret=CLIENT_SECRET,
+            auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET),
+        )
+        self.token_updater(token)
+
+    def request(self, *args, **kwargs) -> Response:
+        try:
+            return self.get_sonos_client().request(*args, **kwargs)
+        except TokenExpiredError:
+            self.refresh_token()
+            return self.request(*args, **kwargs)
 
     def token_updater(self, token: Token) -> None:
         # Remove this so the token can be b64 encoded to < 256 bytes
@@ -72,15 +92,16 @@ class Sonos(TagAuth):
         self.save(token)
 
     def get_households(self) -> Response:
-        return self.get_sonos_client().get(path.join(BASE_URL, "households"))
+        return self.request("get", path.join(BASE_URL, "households"))
 
     def get_groups(self) -> Response:
-        return self.get_sonos_client().get(
-            path.join(BASE_URL, "households", SONOS_HOUSEHOLD, "groups")
+        return self.request(
+            "get", path.join(BASE_URL, "households", SONOS_HOUSEHOLD, "groups")
         )
 
     def stop(self, group_id: str) -> Response:
-        return self.get_sonos_client().post(
+        return self.request(
+            "post",
             path.join(BASE_URL, "groups", group_id, "playback", "pause"),
             json={},
         )
