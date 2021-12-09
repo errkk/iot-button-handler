@@ -142,7 +142,7 @@ class Sonos(TagAuth):
 
     def fade(self):
         for group_id in self.get_group_ids():
-            starting_vol = self.get_vol(group_id)
+            starting_vol = min(self.get_vol(group_id), 15)
             for vol in reversed(range(0, starting_vol)):
                 self.set_vol(group_id, vol)
                 sleep(1)

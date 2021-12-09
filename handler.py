@@ -45,6 +45,9 @@ def fade(_event, _context) -> APIResponse:
     scheduler = Scheduler()
     scheduler.disable()
 
+    hue = Hue()
+    hue.on(BOWL, False)
+
     return _make_response({"message": "Faded"})
 
 
@@ -56,6 +59,11 @@ def set_sleep(event, _context) -> APIResponse:
 
     scheduler = Scheduler()
     dt = scheduler.enable(mins)
+
+    hue = Hue()
+    hue.on(DESK, False)
+    hue.on(LAMP, False)
+    hue.dim(BOWL)
 
     return _make_response(
         {"message": f"Timer set for: {mins} off at: {dt.isoformat()}"}
@@ -70,7 +78,5 @@ def cancel_sleep(_event, _context) -> APIResponse:
 
 
 if __name__ == "__main__":
-    # s = Sonos()
-    # s.all_set_vol(12)
-    s = Scheduler()
-    s.disable()
+    s = Sonos()
+    s.all_set_vol(12)

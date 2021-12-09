@@ -71,3 +71,16 @@ class Hue(TagAuth):
             path.join(BASE_URL, "route/clip/v2/resource/light", light_id),
             json=payload,
         )
+
+    def dim(self, light_id: str) -> None:
+        payload = {
+            "on": {"on": True},
+            "dimming": {"brightness": 30},
+            "color_temperature": {"mirek": 500},  # 153 -1500
+            "dynamics": {"duration": 10000},
+        }
+
+        self.get_hue_client().put(
+            path.join(BASE_URL, "route/clip/v2/resource/light", light_id),
+            json=payload,
+        )
