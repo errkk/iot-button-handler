@@ -19,8 +19,17 @@ provider:
       Resource:
         - ${param:arn}
 
+    - Effect: 'Allow'
+      Action:
+        - 'events:DisableRule'
+        - 'events:EnableRule'
+        - 'events:PutRule'
+      Resource:
+        - ${param:arn_rule}
+
   environment:
     arn: ${param:arn}
+    arn_rule: ${param:arn_rule}
     hue_application_key: ${param:hue_application_key}
     hue_client_id: ${param:hue_client_id}
     hue_client_secret: ${param:hue_client_secret}
@@ -54,3 +63,27 @@ functions:
       - http:
           path: set_vol/{vol}
           method: put
+
+  fade:
+    handler: handler.fade
+    timeout: 20
+    events:
+      - schedule:
+          name: sleep-timer
+          description: 'Sleep timer'
+          enabled: false
+          rate: cron(0 0 29 2 ? *)
+
+  set_sleep:
+    handler: handler.set_sleep
+    events:
+      - http:
+          path: set_sleep/{mins}
+          method: put
+
+  cancel_sleep:
+    handler: handler.cancel_sleep
+    events:
+      - http:
+          path: set_sleep
+          method: delete

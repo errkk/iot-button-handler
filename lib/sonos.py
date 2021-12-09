@@ -1,4 +1,4 @@
-from time import time
+from time import time, sleep
 import webbrowser
 from os import environ, path
 from typing import List
@@ -31,6 +31,7 @@ class Sonos(TagAuth):
 
     def __init__(self) -> None:
         self._client = None
+        self._group_ids = None
         self.manual_refresh = False
 
     @classmethod
@@ -114,19 +115,35 @@ class Sonos(TagAuth):
             json={"volume": volume},
         )
 
+    def get_vol(self, group_id: str) -> int:
+        res = self.request(
+            "get",
+            path.join(BASE_URL, "groups", group_id, "groupVolume"),
+        )
+        data = res.json()
+        return data["volume"]
+
     def get_group_ids(self) -> List[str]:
+        if self._group_ids:
+            return self._group_ids
+
         res = self.get_groups()
         data = res.json()
-        return [g["id"] for g in data["groups"]]
+        self._group_ids = [g["id"] for g in data["groups"]]
+        return self._group_ids
 
     def all_off(self):
         for group_id in self.get_group_ids():
             self.stop(group_id)
 
-    def turn_down(self):
-        for group_id in self.get_group_ids():
-            self.set_vol(group_id, 5)
-
     def all_set_vol(self, vol: int):
         for group_id in self.get_group_ids():
             self.set_vol(group_id, vol)
+
+    def fade(self):
+        for group_id in self.get_group_ids():
+            starting_vol = self.get_vol(group_id)
+            for vol in reversed(range(0, starting_vol)):
+                self.set_vol(group_id, vol)
+                sleep(1)
+            self.stop(group_id)
