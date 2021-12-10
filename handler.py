@@ -65,6 +65,9 @@ def set_sleep(event, _context) -> APIResponse:
     hue.on(LAMP, False)
     hue.dim(BOWL)
 
+    sonos = Sonos()
+    sonos.all_set_vol(8)
+
     return _make_response(
         {"message": f"Timer set for: {mins} off at: {dt.isoformat()}"}
     )
@@ -78,5 +81,4 @@ def cancel_sleep(_event, _context) -> APIResponse:
 
 
 if __name__ == "__main__":
-    s = Sonos()
-    s.all_set_vol(12)
+    pass

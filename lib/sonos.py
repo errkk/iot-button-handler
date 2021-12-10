@@ -5,6 +5,7 @@ from typing import List
 
 from requests.auth import HTTPBasicAuth
 from requests import Response
+from requests.exceptions import ReadTimeout
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 
@@ -107,12 +108,20 @@ class Sonos(TagAuth):
             json={},
         )
 
-    def set_vol(self, group_id: str, vol: int) -> Response:
+    def start(self, group_id: str) -> Response:
+        return self.request(
+            "post",
+            path.join(BASE_URL, "groups", group_id, "playback", "play"),
+            json={},
+        )
+
+    def set_vol(self, group_id: str, vol: int, **kwargs) -> Response:
         volume = min(abs(vol), 100)
         return self.request(
             "post",
             path.join(BASE_URL, "groups", group_id, "groupVolume"),
             json={"volume": volume},
+            **kwargs,
         )
 
     def get_vol(self, group_id: str) -> int:
@@ -144,6 +153,9 @@ class Sonos(TagAuth):
         for group_id in self.get_group_ids():
             starting_vol = min(self.get_vol(group_id), 15)
             for vol in reversed(range(0, starting_vol)):
-                self.set_vol(group_id, vol)
+                try:
+                    self.set_vol(group_id, vol, timeout=0.5)
+                except ReadTimeout:
+                    pass
                 sleep(1)
             self.stop(group_id)
