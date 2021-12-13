@@ -4,7 +4,7 @@ from os import environ, path
 from typing import List
 
 from requests.auth import HTTPBasicAuth
-from requests import Response
+from requests import Response, codes
 from requests.exceptions import ReadTimeout
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
@@ -158,4 +158,6 @@ class Sonos(TagAuth):
                 except ReadTimeout:
                     pass
                 sleep(1)
-            self.stop(group_id)
+            if self.stop(group_id).status_code == codes.OK:
+                # Return vol for next time
+                self.set_vol(group_id, 12)

@@ -75,7 +75,7 @@ class Hue(TagAuth):
     def dim(self, light_id: str) -> None:
         payload = {
             "on": {"on": True},
-            "dimming": {"brightness": 30},
+            "dimming": {"brightness": 10},
             "color_temperature": {"mirek": 500},  # 153 -1500
             "dynamics": {"duration": 10000},
         }
