@@ -141,6 +141,30 @@ class Sonos(TagAuth):
         self._group_ids = [g["id"] for g in data["groups"]]
         return self._group_ids
 
+    def get_playback_metadata(self, group_id: str):
+        res = self.request(
+            "get",
+            path.join(BASE_URL, "groups", group_id, "playbackMetadata"),
+        )
+        return res.json()
+
+    def get_playback(self, group_id: str):
+        res = self.request(
+            "get",
+            path.join(BASE_URL, "groups", group_id, "playback"),
+        )
+        return res.json()
+
+    def is_pb(self, group_id: str) -> bool:
+        PB = "POINT BLANK RADIO"
+        md = self.get_playback_metadata(group_id)
+        return md.get("streamInfo", None) == PB
+
+    def is_playing(self, group_id: str) -> bool:
+        PLAYING = "PLAYBACK_STATE_PLAYING"
+        md = self.get_playback(group_id)
+        return md["playbackState"] == PLAYING
+
     def all_off(self):
         for group_id in self.get_group_ids():
             self.stop(group_id)

@@ -38,6 +38,7 @@ provider:
     sonos_household: ${param:sonos_household}
     hue_token_key: hueToken
     sonos_token_key: sonosToken
+    prev_vol_key: previousVol
 
 package:
   include:
@@ -87,3 +88,21 @@ functions:
       - http:
           path: set_sleep
           method: delete
+
+  turn_down_ads:
+    handler: handler.turn_down_ads
+    events:
+      - schedule:
+          name: turn-down-ads
+          description: 'Turn down vol on the hour for a couple of mins'
+          enabled: true
+          rate: cron(0 * * * ? *)
+
+  on_ad_timeout:
+    handler: handler.on_ad_timeout
+    events:
+      - schedule:
+          name: on-ad-timeout 
+          description: 'Turn vol back after the fucking ads'
+          enabled: true
+          rate: cron(5 * * * ? *)
