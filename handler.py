@@ -94,3 +94,4 @@ def on_ad_timeout(_event, _context) -> None:
 if __name__ == "__main__":
     # turn_down_ads({}, {})
     # on_ad_timeout({}, {})
+    pass

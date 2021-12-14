@@ -32,6 +32,7 @@ class AdKiller(TagBase):
             self.sonos.set_vol(self.group_id, self.turned_down)
             turned_down = True
 
+        # TODO maybe save if its a skip
         self.save({"vol": vol, "turned_down": turned_down})
 
     def turn_back_up(self):
