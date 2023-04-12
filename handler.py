@@ -1,8 +1,9 @@
 import json
 from typing import TypedDict
 from lib.hue import Hue
-from lib.scheduler import Scheduler
+from lib.scheduler import SleepScheduler
 from lib.sonos import Sonos
+from lib.ad_killer import AdKiller
 
 DESK = "abb4dce9-a33a-4a7f-bf69-a491f8d61c22"
 BOWL = "15d8cf20-62db-471e-bbe4-d6835f80cfe4"
@@ -42,7 +43,7 @@ def fade(_event, _context) -> APIResponse:
     sonos = Sonos()
     sonos.fade()
 
-    scheduler = Scheduler()
+    scheduler = SleepScheduler()
     scheduler.disable()
 
     hue = Hue()
@@ -57,7 +58,7 @@ def set_sleep(event, _context) -> APIResponse:
     except (KeyError, ValueError):
         mins = 15
 
-    scheduler = Scheduler()
+    scheduler = SleepScheduler()
     dt = scheduler.enable(mins)
 
     hue = Hue()
@@ -68,18 +69,26 @@ def set_sleep(event, _context) -> APIResponse:
     sonos = Sonos()
     sonos.all_set_vol(6)
 
-    return _make_response(
-        {"message": f"Timer set for: {mins} off at: {dt.isoformat()}"}
-    )
+    return _make_response({"message": f"Timer set for: {mins} off at: {dt.isoformat()}"})
 
 
 def cancel_sleep(_event, _context) -> APIResponse:
-    scheduler = Scheduler()
+    scheduler = SleepScheduler()
     scheduler.disable()
 
     return _make_response({"message": "Timer canceled"})
 
 
+def turn_down_ads(_event, _context) -> None:
+    ad_killer = AdKiller()
+    ad_killer.turn_down_pb()
+
+
+def on_ad_timeout(_event, _context) -> None:
+    ad_killer = AdKiller()
+    ad_killer.turn_back_up()
+
+
 if __name__ == "__main__":
-    s = Sonos()
-    s.fade()
+    sonos = Sonos()
+    sonos.get_group_ids()

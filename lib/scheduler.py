@@ -1,10 +1,6 @@
 from datetime import datetime, timedelta
-from os import environ
 
 import boto3
-
-
-ARN = environ["arn_rule"]
 
 
 class Scheduler:
@@ -25,9 +21,12 @@ class Scheduler:
         return dt
 
     def disable(self):
-        res = self.get_boto_client().disable_rule(Name=self.rule_name)
-        print(res)
+        self.get_boto_client().disable_rule(Name=self.rule_name)
 
     @classmethod
     def get_expression(cls, dt: datetime) -> str:
         return f"cron({dt.minute} {dt.hour} {dt.day} {dt.month} ? {dt.year})"
+
+
+class SleepScheduler(Scheduler):
+    rule_name = "sleep-timer"

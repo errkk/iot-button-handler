@@ -42,5 +42,5 @@ make deploy
 6. Get tokens
 Each time you deploy, it overwrites the tags unfortunately, so re-auth is the easiest thing to do for now
 ```sh
-make get_tokens
+make get_token
 ```
