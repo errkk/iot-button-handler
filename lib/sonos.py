@@ -12,7 +12,7 @@ from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from .tag_auth import TagAuth, Token
 
 # For OAuth
-REDIRECT_URI = "https://webhook.site/b1a702b9-4d5d-46f2-a70c-446683799f8c"
+REDIRECT_URI = "https://webhook.site/8d0c3f92-761b-4bfe-8769-7ced184f864f"
 CLIENT_ID = environ["sonos_client_id"]
 CLIENT_SECRET = environ["sonos_client_secret"]
 TOKEN_KEY = environ["sonos_token_key"]
@@ -37,9 +37,7 @@ class Sonos(TagAuth):
 
     @classmethod
     def get_auth_url(cls):
-        client = OAuth2Session(
-            client_id=CLIENT_ID, redirect_uri=REDIRECT_URI, scope=SCOPE
-        )
+        client = OAuth2Session(client_id=CLIENT_ID, redirect_uri=REDIRECT_URI, scope=SCOPE)
         url, _ = client.authorization_url(AUTH_URL)
         webbrowser.open_new_tab(url)
 
@@ -50,9 +48,7 @@ class Sonos(TagAuth):
             scope=SCOPE,
         )
 
-        token: Token = client.fetch_token(
-            TOKEN_URL, client_secret=CLIENT_SECRET, code=code
-        )
+        token: Token = client.fetch_token(TOKEN_URL, client_secret=CLIENT_SECRET, code=code)
         self.token_updater(token)
 
     def get_sonos_client(self) -> OAuth2Session:
@@ -97,9 +93,7 @@ class Sonos(TagAuth):
         return self.request("get", path.join(BASE_URL, "households"))
 
     def get_groups(self) -> Response:
-        return self.request(
-            "get", path.join(BASE_URL, "households", SONOS_HOUSEHOLD, "groups")
-        )
+        return self.request("get", path.join(BASE_URL, "households", SONOS_HOUSEHOLD, "groups"))
 
     def stop(self, group_id: str) -> Response:
         return self.request(

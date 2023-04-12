@@ -69,9 +69,7 @@ def set_sleep(event, _context) -> APIResponse:
     sonos = Sonos()
     sonos.all_set_vol(6)
 
-    return _make_response(
-        {"message": f"Timer set for: {mins} off at: {dt.isoformat()}"}
-    )
+    return _make_response({"message": f"Timer set for: {mins} off at: {dt.isoformat()}"})
 
 
 def cancel_sleep(_event, _context) -> APIResponse:
@@ -92,6 +90,5 @@ def on_ad_timeout(_event, _context) -> None:
 
 
 if __name__ == "__main__":
-    # turn_down_ads({}, {})
-    # on_ad_timeout({}, {})
-    pass
+    sonos = Sonos()
+    sonos.get_group_ids()
