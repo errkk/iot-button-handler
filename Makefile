@@ -15,6 +15,7 @@ watch:
 	nodemon -e py --exec "$(BIN)python -m handler"
 
 get_token:
+	source aws.env && \
 	$(BIN)python -m lib.get_token
 
 install:
